@@ -1,3 +1,109 @@
+// usefull functions
+
+
+SUTIL_INLINE SUTIL_HOSTDEVICE float3 refract(const float3& i, const float3& n, const float eta) {
+
+    float k = 1.0 - eta * eta * (1.0 - dot(n, i) * dot(n, i));
+    if (k < 0.0)
+        return make_float3(0.0f);
+    else
+        return (eta * i - (eta * dot(n, i) + sqrt(k)) * n);
+}
+
+
+
+struct Onb
+{
+  __forceinline__ __device__ Onb(const float3& normal)
+  {
+    m_normal = normal;
+
+    if( fabs(m_normal.x) > fabs(m_normal.z) )
+    {
+      m_binormal.x = -m_normal.y;
+      m_binormal.y =  m_normal.x;
+      m_binormal.z =  0;
+    }
+    else
+    {
+      m_binormal.x =  0;
+      m_binormal.y = -m_normal.z;
+      m_binormal.z =  m_normal.y;
+    }
+
+    m_binormal = normalize(m_binormal);
+    m_tangent = normalize(cross( m_binormal, m_normal ));
+    //m_binormal = cross(m_normal, m_tangent);
+  }
+
+  __forceinline__ __device__ void inverse_transform(float3& p) const
+  {
+    p = p.z*m_tangent + p.x*m_binormal + p.y*m_normal;
+  }
+
+  float3 m_tangent;
+  float3 m_binormal;
+  float3 m_normal;
+};
+
+
+
+//
+// sampling function
+//
+
+static __forceinline__ __device__ void cosine_power_sample_hemisphere(const float u1, const float u2, float3& p, float exponent)
+{
+    const float t = pow(u2, (1/(exponent + 1)));
+    const float aux = sqrt(1-t*t);
+    const float pi_times_2_times_u1 = 6.28318530717 * u1;
+    p.z = cos(pi_times_2_times_u1)* aux;
+    p.x = sin(pi_times_2_times_u1)* aux;
+    p.y = t;
+    
+}
+
+
+static __forceinline__ __device__ void cosine_sample_hemisphere(const float u1, const float u2, float3& p)
+{
+  // Uniformly sample disk.
+  const float r   = sqrtf( u1 );
+  const float phi = 2.0f*M_PIf * u2;
+  p.z = r * cosf( phi );
+  p.x = r * sinf( phi );
+
+  // Project up to hemisphere.
+  p.y = sqrtf( fmaxf( 0.0f, 1.0f - p.x*p.x - p.z*p.z ) );
+}
+
+
+
+// pack and unpack payload pointer from
+// Ingo Wald Optix 7 course
+// https://gitlab.com/ingowald/optix7course
+
+static __forceinline__ __device__
+void *unpackPointer( uint32_t i0, uint32_t i1 ) {
+    const uint64_t uptr = static_cast<uint64_t>( i0 ) << 32 | i1;
+    void*           ptr = reinterpret_cast<void*>( uptr ); 
+    return ptr;
+}
+
+static __forceinline__ __device__
+void  packPointer( void* ptr, uint32_t& i0, uint32_t& i1 ) {
+    const uint64_t uptr = reinterpret_cast<uint64_t>( ptr );
+    i0 = uptr >> 32;
+    i1 = uptr & 0x00000000ffffffff;
+}
+
+template<typename T>
+static __forceinline__ __device__ T *getPRD() { 
+    const uint32_t u0 = optixGetPayload_0();
+    const uint32_t u1 = optixGetPayload_1();
+    return reinterpret_cast<T*>( unpackPointer( u0, u1 ) );
+}
+
+
 //
 // Copyright (c) 2019, NVIDIA CORPORATION. All rights reserved.
 //

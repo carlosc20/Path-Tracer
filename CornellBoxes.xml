@@ -1,19 +1,21 @@
 <?xml version="1.0" ?>
-<project name="Optix Test - Iterative Path Tracing" width=1024 height=1024>
+<project name="Optix Test - Iterative Path Tracing with tone mapping" width=1024 height=1024>
 	<assets>
         <attributes>
             <attribute type="PASS" name="SHADOW_RAYS" data="INT" value="1" />
-            <attribute type="PASS" name="MAX_DEPTH" data="INT" value = "3" />
             <attribute type="PASS" name="GAMMA" data="FLOAT" value = "2.2" />
-            <attribute type="LIGHT" name="ATTENUATION" data="BOOL" value="1" />
-
+            <attribute type="PASS" name="LIGHT_SCALE" data="FLOAT" value = "10.0" />
+ 
+			<attribute type="PASS" name="EXPOSURE" data="FLOAT" value = "10" />
+			<attribute type="PASS" name="Levels" data="INT" value=10 />
+			<attribute type="PASS" name="CurrentLevel" data="INT" value=0 />
        </attributes>
 		<scenes>
 			<scene name="MainScene" >
-				<!--file name="models/sponza/crytek-sponza/sponza.nbo" /-->
-				<!--file name="models/LargoCamoes/largoCamoes.nbo" /-->
-				<!--file name="models/SanMiguel/san-miguel.nbo" /-->
                 <file name="models/cornellBox/CornellBox-Original2.obj" />
+				<!--file name="../../../models/LargoCamoes/largoCamoes.nbo" /-->
+				<!--file name="../../../models/SanMiguel/san-miguel.nbo" /-->
+				<!--file name="models/cornellBox/CornellBox-Sphere2.obj" /-->
 			</scene>
 		</scenes>
 		<viewports>
@@ -27,8 +29,6 @@
 				<projection TYPE="PERSPECTIVE" FOV=60.0 NEAR=1.0 FAR=10000.0 />
 				<POSITION x="0.0" y="0.75" z="2.5" />
 				<VIEW x="0.0" y="0.0" z="-1.0"  />
-				<!--POSITION x="9.822" y="1.269" z="12.338" />
-				<VIEW x="0.871" y="-0.286" z="-0.40"  /-->
 				<UP x="0.0" y="1.0" z="0.0" />
 			</camera>
 		</cameras>
@@ -42,7 +42,7 @@
 		</materialLibs>
 	</assets>
 	<pipelines>
-		<pipeline name="softShadows" default="true" defaultCamera="MainCamera">
+		<pipeline name="PathTracer" default="true" defaultCamera="MainCamera">
 			<pass class="rt" name="pass1">
 				<scenes>
 					<scene name="MainScene" />
@@ -69,7 +69,7 @@
 					<rayGen file="out/optix.ptx" proc="__raygen__renderFrame"/> 
 				</rtEntryPoint>
 				<rtDefaultMaterial>
-					<rayType name="Lambert">
+					<rayType name="Radiance">
 						<rtProgram type="ANY_HIT" file="out/optix.ptx" proc="__anyhit__radiance"/> 
 						<rtProgram type="CLOSEST_HIT" file="out/optix.ptx" proc="__closesthit__radiance"/> 
 						<rtProgram type="MISS" 		 file="out/optix.ptx" proc="__miss__radiance"/> 
@@ -80,7 +80,7 @@
 						<rtProgram type="MISS" 		 file="out/optix.ptx" proc="__miss__shadow"/> 
 					</rayType>
 				</rtDefaultMaterial>
-                <!--rtMaterialMap>
+				<!--rtMaterialMap>
                     <rtMap to = "light">
                         <rayType name="Phong">
                             <rtProgram type="ANY_HIT" file="out/optix.ptx" proc="__anyhit__light"/> 
@@ -118,31 +118,40 @@
                         </rayType>
                     </rtMap>
                 </rtMaterialMap-->
-                <rtGlobalParams>
+               <rtGlobalParams>
                     <param name="lightPos" type="LIGHT" context="CURRENT" id=0 component="POSITION" />
-                    <param name="maxDepth" type="PASS" context="CURRENT" component="MAX_DEPTH" />
+                    <param name="accumBuffer" type="BUFFER" context="Optix Ray Tracer Render Target::accumBuffer"  component="ID"/>               
                     <param name="shadowRays" type="PASS" context="CURRENT" component= "SHADOW_RAYS" />
                     <param name="gamma" type="PASS" context="CURRENT" component= "GAMMA" />
-                    <param name="attenuation" type="LIGHT" context="Sun" component= "ATTENUATION" />
-
-                </rtGlobalParams>
+                    <param name="lightScale" type="PASS" context="CURRENT" component= "LIGHT_SCALE" />
+               </rtGlobalParams>
 			</pass>
-			<pass class="quad" name="pass2">
+			<pass class="quad" name="computeLuminance">
+				<COLOR_CLEAR value=false />
+				<renderTarget name="luminance" fromLibrary="Optix Ray Tracer Render Target" />
+				<material name="computeLuminance" fromLibrary="Optix Ray Tracer Render Target" />
+			</pass>
+			
+			<pass class="compute" name="mipmap">
+				<testScript file="test.lua" script="testMipmap" TEST_MODE="RUN_WHILE"/>
+				<material name="mipmap" fromLibrary="Optix Ray Tracer Render Target" 
+					dimX=512 dimY=512 dimZ=1/>
+			</pass>
+			<pass class="quad" name="showtonemap">
 				<viewport name="MainViewport" />
-				<texture name="offscreenrender" fromLibrary="Optix Ray Tracer Render Target" />
+				<material name="tonemap" fromLibrary="Optix Ray Tracer Render Target" />
 			</pass>
 		</pipeline>
 	</pipelines>
     <interface>
         <window label="settings">
-            <var label="Squared rays per pixel" type="PASS" context="softShadows#pass1" component="RAYS_PER_PIXEL"
+            <var label="Squared rays per pixel" type="PASS" context="PathTracer#pass1" component="RAYS_PER_PIXEL"
                 def="min=1 max=10" />
-            <var label="Max depth" type="PASS" context="softShadows#pass1" component="MAX_DEPTH"
+            <var label="Max depth" type="PASS" context="PathTracer#pass1" component="MAX_DEPTH"
                 def="min=1 max=10" />
-            <var label="Gamma" type="PASS" context="softShadows#pass1" component="GAMMA"
+            <var label="Gamma" type="PASS" context="PathTracer#pass1" component="GAMMA"
                 def="min=0.1 max=3" />
-            <var label="Attenuation" type="LIGHT" context="Sun" component="ATTENUATION" />
-
-        </window>
+            <var label="Light Scale" type="PASS" context="PathTracer#pass1" component="LIGHT_SCALE" />
+         </window>
     </interface>
 </project>
