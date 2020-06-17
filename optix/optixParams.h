@@ -1,3 +1,5 @@
+#pragma once
+
 #include "../include/launchParamsGlobal.h"
 #include  "../include/util.h"
 
