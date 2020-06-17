@@ -1,6 +1,6 @@
 #include "common.h"
 #include "glossy.cu"
-//#include "glass.cu"
+#include "glass.cu"
 
 // -------------------------------------------------------
 // Lambert

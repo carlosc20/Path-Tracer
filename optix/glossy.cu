@@ -4,7 +4,6 @@
 // Glossy Reflections (Specular materials with rugosity) 
 extern "C" __global__ void __closesthit__glossy() {
 
-
     const TriangleMeshSBTData &sbtData
       = *(const TriangleMeshSBTData*)optixGetSbtDataPointer();  
 

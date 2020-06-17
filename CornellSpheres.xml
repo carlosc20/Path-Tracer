@@ -80,18 +80,18 @@
 					</rayType>
 				</rtDefaultMaterial>
 				<rtMaterialMap>
-                    <!--rtMap to = "rightSphere">
+                    <rtMap to = "rightSphere">
                         <rayType name="Phong">
-                            <rtProgram type="ANY_HIT" file="out/optix.ptx" proc="__anyhit__phong_glass"/> 
-                            <rtProgram type="CLOSEST_HIT" file="out/optix.ptx" proc="__closesthit__phong_glass"/> 
-                            <rtProgram type="MISS" 		 file="out/optix.ptx" proc="__miss__phong_glass"/> 
+                            <rtProgram type="ANY_HIT" file="out/optix.ptx" proc="__anyhit__radiance"/> 
+                            <rtProgram type="CLOSEST_HIT" file="out/optix.ptx" proc="__closesthit__glass"/> 
+                            <rtProgram type="MISS" 		 file="out/optix.ptx" proc="__miss__radiance"/> 
                         </rayType>
                         <rayType name="Shadow">
-                            <rtProgram type="ANY_HIT" file="out/optix.ptx" proc="__anyhit__shadow_glass"/> 
+                            <rtProgram type="ANY_HIT" file="out/optix.ptx" proc="__anyhit__shadow"/> 
                             <rtProgram type="CLOSEST_HIT" file="out/optix.ptx" proc="__closesthit__shadow_glass"/> 
-                            <rtProgram type="MISS" 		 file="out/optix.ptx" proc="__miss__shadow_glass"/> 
+                            <rtProgram type="MISS" 		 file="out/optix.ptx" proc="__miss__shadow"/> 
                         </rayType>
-                    </rtMap-->
+                    </rtMap>
                     <rtMap to = "leftSphere">
                         <rayType name="Phong">
                             <rtProgram type="ANY_HIT" file="out/optix.ptx" proc="__anyhit__radiance"/> 

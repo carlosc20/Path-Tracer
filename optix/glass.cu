@@ -2,11 +2,12 @@
 
 // -----------------------------------------------
 // Glass Phong rays (Refração)
-
-extern "C" __global__ void __closesthit__phong_glass() {
+extern "C" __global__ void __closesthit__glass() {
 
     const TriangleMeshSBTData &sbtData
       = *(const TriangleMeshSBTData*)optixGetSbtDataPointer();  
+
+    RadiancePRD &prd = *(RadiancePRD *)getPRD<RadiancePRD>();
 
     // retrieve primitive id and indexes
     const int   primID = optixGetPrimitiveIndex();
@@ -22,89 +23,72 @@ extern "C" __global__ void __closesthit__phong_glass() {
         +         u * sbtData.vertexD.normal[index.y]
         +         v * sbtData.vertexD.normal[index.z];
 
-    float3 normal = normalize(make_float3(n));
-    const float3 normRayDir = optixGetWorldRayDirection();
+    float3 nn = normalize(make_float3(n));
 
-    // new ray direction
-    float3 rayDir;
+    // intersection position
+    const float3 &rayDir =  optixGetWorldRayDirection();
+    const float3 pos = optixGetWorldRayOrigin() + optixGetRayTmax() * rayDir;
+
+    // if (dot(nn, rayDir) > 0.0)
+    //    nn = -nn;
+
+    float3 nextRayDir;
+
     // entering glass
     float dotP;
-    if (dot(normRayDir, normal) < 0) {
-        dotP = dot(normRayDir, -normal);
-        rayDir = refract(normRayDir, normal, 0.66);
+    if (dot(rayDir, nn) < 0) {
+        dotP = dot(rayDir, -nn);
+        nextRayDir = refract(rayDir, nn, 0.66);
     }
     // exiting glass
     else {
         dotP = 0;
-        rayDir = refract(normRayDir, -normal, 1.5);
+        nextRayDir = refract(rayDir, -nn, 1.5);
     }
 
-    const float3 pos = optixGetWorldRayOrigin() + optixGetRayTmax() * optixGetWorldRayDirection();
-    
-    float3 refractPRD = make_float3(0.0f);
-    uint32_t u0, u1;
-    packPointer( &refractPRD, u0, u1 );  
-    
-    if (length(rayDir) > 0)
-        optixTrace(optixLaunchParams.traversable,
-            pos,
-            rayDir,
-            0.00001f,    // tmin
-            1e20f,  // tmax
-            0.0f,   // rayTime
-            OptixVisibilityMask( 255 ),
-            OPTIX_RAY_FLAG_NONE, //OPTIX_RAY_FLAG_NONE,
-            PHONG,             // SBT offset
-            RAY_TYPE_COUNT,     // SBT stride
-            PHONG,             // missSBTIndex 
-            u0, u1 );
+    // didn't hit light
+    prd.emitted = make_float3(0.0f);
+    prd.countEmitted = false;
 
-    // ray payload 
-    float3 &prd = *(float3*)getPRD<float3>();
- 
-    float3 reflectPRD = make_float3(0.0f);
+    if (length(nextRayDir) > 0) // why?
+        prd.direction = nextRayDir;
+
     if (dotP > 0) {
-        float3 reflectDir = reflect(normRayDir, normal);        
-        packPointer( &reflectPRD, u0, u1 );  
-        optixTrace(optixLaunchParams.traversable,
-            pos,
-            reflectDir,
-            0.00001f,    // tmin
-            1e20f,  // tmax
-            0.0f,   // rayTime
-            OptixVisibilityMask( 255 ),
-            OPTIX_RAY_FLAG_NONE, //OPTIX_RAY_FLAG_NONE,
-            PHONG,             // SBT offset
-            RAY_TYPE_COUNT,     // SBT stride
-            PHONG,             // missSBTIndex 
-            u0, u1 );
-        float r0 = (1.5f - 1.0f)/(1.5f + 1.0f);
-        r0 = r0*r0 + (1-r0*r0) * pow(1-dotP,5);
-        prd =  refractPRD * (1-r0) + r0*reflectPRD;
+        uint32_t seed = prd.seed;
+        const float z = rnd(seed);
+        prd.seed = seed;
+
+        // refractive indices
+        const float RI_AIR = 1.0f;
+        const float RI_GLASS = 1.5f;
+
+        // Reflection coefficient
+        float r0 = (RI_GLASS - RI_AIR)/(RI_GLASS + RI_AIR);
+        r0 = r0 * r0;
+        // Schlick's approximation
+        r0 = r0 + (1 - r0) * pow(1-dotP,5);
+
+        // next ray has probability of being used for refraction or reflexion based on r0
+        // aprox: refract * (1-r0) + reflect * r0;
+        if(z < r0) {
+            float3 reflectDir = reflect(rayDir, nn);        
+            prd.direction = reflectDir;
+        }
     }
-    else
-        prd =  refractPRD ;
-}
 
+    prd.origin = pos;
 
-
-extern "C" __global__ void __anyhit__phong_glass() {
-
-}
-
-
-// miss sets the background color
-extern "C" __global__ void __miss__phong_glass() {
-
-    float3 &prd = *(float3*)getPRD<float3>();
-    // set blue as background color
-    prd = make_float3(0.0f, 0.0f, 1.0f);
+    // attenuation?
 }
 
 
 // -----------------------------------------------
 // Glass Shadow rays
+extern "C" __global__ void __closesthit__shadow_glass() {
+    optixSetPayload_0( static_cast<uint32_t>(true));
+}
 
+/*
 extern "C" __global__ void __closesthit__shadow_glass() {
 
     // ray payload
@@ -112,39 +96,25 @@ extern "C" __global__ void __closesthit__shadow_glass() {
     uint32_t u0, u1;
     packPointer( &afterPRD, u0, u1 );  
 
-    const float3 pos = optixGetWorldRayOrigin() + optixGetRayTmax()*optixGetWorldRayDirection();
+    // intersection position
+    const float3 &rayDir =  optixGetWorldRayDirection();
+    const float3 pos = optixGetWorldRayOrigin() + optixGetRayTmax() * rayDir;
+
     
-    // trace primary ray
+    uint32_t occluded = 0u;
     optixTrace(optixLaunchParams.traversable,
         pos,
-        optixGetWorldRayDirection(),
-        0.001f,    // tmin
-        1e20f,  // tmax
-        0.0f,   // rayTime
+        rayDir,
+        0.1f,                    // tmin
+        1e20f,           // tmax
+        0.0f,                    // rayTime
         OptixVisibilityMask( 255 ),
-        OPTIX_RAY_FLAG_NONE, //OPTIX_RAY_FLAG_NONE,
-        SHADOW,             // SBT offset
-        RAY_TYPE_COUNT,     // SBT stride
-        SHADOW,             // missSBTIndex 
-        u0, u1 );
+        OPTIX_RAY_FLAG_NONE,
+        SHADOW,                 // SBT offset
+        RAY_TYPE_COUNT,         // SBT stride
+        SHADOW,                 // missSBTIndex
+        occluded);
 
-    float &prd = *(float*)getPRD<float>();
-    prd = 0.95f * afterPRD;
+    // attenuation?
 }
-
-
-// any hit for shadows
-extern "C" __global__ void __anyhit__shadow_glass() {
-
-}
-
-
-// miss for shadows
-extern "C" __global__ void __miss__shadow_glass() {
-
-    float &prd = *(float*)getPRD<float>();
-    // set blue as background color
-    prd = 1.0f;
-}
-
-
+*/
