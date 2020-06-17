@@ -28,7 +28,7 @@ struct shadowPRD{
 
 
 // -------------------------------------------------------
-
+// Lambert
 extern "C" __global__ void __closesthit__radiance() {
 
     const TriangleMeshSBTData &sbtData
@@ -150,17 +150,12 @@ extern "C" __global__ void __closesthit__radiance() {
 }
 
 
-extern "C" __global__ void __anyhit__radiance() {
+extern "C" __global__ void __anyhit__radiance() {}
 
-}
-
-
-// miss sets the background color
 extern "C" __global__ void __miss__radiance() {
-
+    // miss sets the background color
     RadiancePRD &prd = *(RadiancePRD*)getPRD<RadiancePRD>();
-    // set black as background color
-    prd.radiance = make_float3(0.0f, 0.0f, 0.0f);
+    prd.radiance = make_float3(0.0f, 0.0f, 0.0f); // black
     prd.done = true;
 }
 
@@ -169,20 +164,12 @@ extern "C" __global__ void __miss__radiance() {
 // Shadow rays
 
 extern "C" __global__ void __closesthit__shadow() {
-
     optixSetPayload_0( static_cast<uint32_t>(true));
 }
 
+extern "C" __global__ void __anyhit__shadow() {}
 
-// any hit for shadows
-extern "C" __global__ void __anyhit__shadow() {
-
-}
-
-
-// miss for shadows
 extern "C" __global__ void __miss__shadow() {
-
     optixSetPayload_0( static_cast<uint32_t>(false));
 }
 
@@ -190,8 +177,8 @@ extern "C" __global__ void __miss__shadow() {
 
 
 // -----------------------------------------------
-// Metal Phong rays (Materiais especulares com rugosidade) Glossy Reflections
-extern "C" __global__ void __closesthit__phong_metal() {
+// Glossy Reflections (Specular materials with rugosity) 
+extern "C" __global__ void __closesthit__glossy() {
 
 
     const TriangleMeshSBTData &sbtData
@@ -222,41 +209,31 @@ extern "C" __global__ void __closesthit__phong_metal() {
     if (dot(nn, rayDir) > 0.0)
         nn = -nn;
 
-
+    // didn't hit light
     prd.emitted = make_float3(0.0f);
     prd.countEmitted = false;
 
-    // set origin and direction for next ray
+
+    const float glossiness = optixLaunchParams.global->glossiness;
+
+    float3 nextRayDir;
     float3 reflectDir = reflect(optixGetWorldRayDirection(), nn);
-
-    prd.direction = reflectDir;
-    prd.origin    = pos;
-
-
-    /* TODO glossiness
-
-    // r = u ^ 1/(glossiness + 1)
-
-    // update attenuation
-    prd.attenuation *= sbtData.diffuse;
-
-
     uint32_t seed = prd.seed;
 
-    {
-        // set origin and direction for next ray
+    do {
         const float z1 = rnd(seed);
         const float z2 = rnd(seed);
+        cosine_power_sample_hemisphere( z1, z2, nextRayDir, glossiness );
+        Onb onb( reflectDir );
+        onb.inverse_transform( nextRayDir );
+    } while (dot(nextRayDir, nn) < 0.001);
+    prd.seed = seed;
 
-        float3 w_in;
-        cosine_sample_hemisphere( z1, z2, w_in );
-        Onb onb( nn );
-        onb.inverse_transform( w_in );
+    // set origin and direction for next ray
+    prd.direction = nextRayDir;
+    prd.origin    = pos;
 
-        prd.direction = w_in;
-        prd.origin    = pos;
-    }
-    */
+    prd.attenuation *= sbtData.diffuse;
 }
 
 

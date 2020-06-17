@@ -7,7 +7,8 @@ struct GlobalParams{
     int shadowRays;
     float gamma;
     float lightScale;
-} ;
+    float glossiness;
+};
 
 
 struct LaunchParams

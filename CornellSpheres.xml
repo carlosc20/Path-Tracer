@@ -9,6 +9,8 @@
 			<attribute type="PASS" name="EXPOSURE" data="FLOAT" value = "10" />
 			<attribute type="PASS" name="Levels" data="INT" value=10 />
 			<attribute type="PASS" name="CurrentLevel" data="INT" value=0 />
+
+			<attribute type="PASS" name="GLOSSINESS" data="FLOAT" value="128" />
        </attributes>
 		<scenes>
 			<scene name="MainScene" >
@@ -93,7 +95,7 @@
                     <rtMap to = "leftSphere">
                         <rayType name="Phong">
                             <rtProgram type="ANY_HIT" file="out/optix.ptx" proc="__anyhit__radiance"/> 
-                            <rtProgram type="CLOSEST_HIT" file="out/optix.ptx" proc="__closesthit__phong_metal"/> 
+                            <rtProgram type="CLOSEST_HIT" file="out/optix.ptx" proc="__closesthit__glossy"/> 
                             <rtProgram type="MISS" 		 file="out/optix.ptx" proc="__miss__radiance"/> 
                         </rayType>
                         <rayType name="Shadow">
@@ -109,6 +111,7 @@
                     <param name="shadowRays" type="PASS" context="CURRENT" component= "SHADOW_RAYS" />
                     <param name="gamma" type="PASS" context="CURRENT" component= "GAMMA" />
                     <param name="lightScale" type="PASS" context="CURRENT" component= "LIGHT_SCALE" />
+					<param name="glossiness" type="PASS" context="CURRENT" component="GLOSSINESS" />
                </rtGlobalParams>
 			</pass>
 			<pass class="quad" name="computeLuminance">
@@ -137,6 +140,8 @@
             <var label="Gamma" type="PASS" context="PathTracer#pass1" component="GAMMA"
                 def="min=0.1 max=3" />
             <var label="Light Scale" type="PASS" context="PathTracer#pass1" component="LIGHT_SCALE" />
+			<var label="Glossiness" type="PASS" context="PathTracer#pass1" component="GLOSSINESS"
+                def="min=0.1 max=1000" />
          </window>
     </interface>
 </project>
