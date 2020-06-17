@@ -1,0 +1,17 @@
+
+refraction and reflection, fresnel
+https://computergraphics.stackexchange.com/questions/2482/choosing-reflection-or-refraction-in-path-tracing
+
+importance sampling
+https://computergraphics.stackexchange.com/questions/4979/what-is-importance-sampling/4994#4994
+
+
+russian roulette
+https://computergraphics.stackexchange.com/questions/2316/is-russian-roulette-really-the-answer
+
+Path tracer com RR
+https://github.com/joaovbs96/OptiX-Path-Tracer/tree/master/OptiX-Path-Tracer/programs
+
+
+Progressive Path Tracing with Explicit Light Sampling
+https://computergraphics.stackexchange.com/questions/5152/progressive-path-tracing-with-explicit-light-sampling/5153#5153

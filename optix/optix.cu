@@ -6,7 +6,7 @@ extern "C" {
 }
 
 // ray types
-enum { RAIDANCE=0, SHADOW, RAY_TYPE_COUNT };
+enum { RADIANCE=0, SHADOW, RAY_TYPE_COUNT };
 
 struct RadiancePRD{
     float3   emitted;
@@ -60,18 +60,23 @@ extern "C" __global__ void __closesthit__radiance() {
         nn = -nn;
 
 
-    // check if the ray hit a light and is first ray
+    // if its the first ray and hit a light, set the emission
     if (prd.countEmitted && length(sbtData.emission) != 0) {
         prd.emitted = sbtData.emission ;
         return;
     }
-    else
-        prd.emitted = make_float3(0.0f);
+
+    prd.emitted = make_float3(0.0f);
+    prd.countEmitted = false;
+    
+    // update attenuation
+    prd.attenuation *= sbtData.diffuse;
+
 
     uint32_t seed = prd.seed;
 
     {
-        // trace ray to check if light is occluded
+        // set origin and direction for next ray
         const float z1 = rnd(seed);
         const float z2 = rnd(seed);
 
@@ -79,11 +84,9 @@ extern "C" __global__ void __closesthit__radiance() {
         cosine_sample_hemisphere( z1, z2, w_in );
         Onb onb( nn );
         onb.inverse_transform( w_in );
+
         prd.direction = w_in;
         prd.origin    = pos;
-
-        prd.attenuation *= sbtData.diffuse ;
-        prd.countEmitted = false;
     }
     
 
@@ -103,6 +106,7 @@ extern "C" __global__ void __closesthit__radiance() {
     const float3 Ln    = normalize(cross(lightV1, lightV2));
     const float  LnDl  = -dot( Ln, L );
 
+    // check light sample occlusion
     float weight = 0.0f;
     if( nDl > 0.0f && LnDl > 0.0f )
     {
@@ -110,14 +114,14 @@ extern "C" __global__ void __closesthit__radiance() {
         optixTrace(optixLaunchParams.traversable,
             pos,
             L,
-            0.1f,         // tmin
-            Ldist - 0.01f,  // tmax
+            0.1f,                    // tmin
+            Ldist - 0.01f,           // tmax
             0.0f,                    // rayTime
             OptixVisibilityMask( 1 ),
             OPTIX_RAY_FLAG_TERMINATE_ON_FIRST_HIT,
-            SHADOW,      // SBT offset
-            RAY_TYPE_COUNT,          // SBT stride
-            SHADOW,      // missSBTIndex
+            SHADOW,                 // SBT offset
+            RAY_TYPE_COUNT,         // SBT stride
+            SHADOW,                 // missSBTIndex
             occluded);
 
         if( !occluded )
@@ -186,12 +190,14 @@ extern "C" __global__ void __miss__shadow() {
 
 
 // -----------------------------------------------
-// Metal Phong rays (Materiais especulares com rugosidade)
-
+// Metal Phong rays (Materiais especulares com rugosidade) Glossy Reflections
 extern "C" __global__ void __closesthit__phong_metal() {
+
 
     const TriangleMeshSBTData &sbtData
       = *(const TriangleMeshSBTData*)optixGetSbtDataPointer();  
+
+    RadiancePRD &prd = *(RadiancePRD *)getPRD<RadiancePRD>();
 
     // retrieve primitive id and indexes
     const int   primID = optixGetPrimitiveIndex();
@@ -206,36 +212,51 @@ extern "C" __global__ void __closesthit__phong_metal() {
         = (1.f-u-v) * sbtData.vertexD.normal[index.x]
         +         u * sbtData.vertexD.normal[index.y]
         +         v * sbtData.vertexD.normal[index.z];
-    // ray payload
 
-    float3 normal = normalize(make_float3(n));
+    float3 nn = normalize(make_float3(n));
 
-    // entering glass
-    //if (dot(optixGetWorldRayDirection(), normal) < 0)
+    // intersection position
+    const float3 &rayDir =  optixGetWorldRayDirection();
+    const float3 pos = optixGetWorldRayOrigin() + optixGetRayTmax() * rayDir ;
 
-    float3 afterPRD = make_float3(1.0f);
-    uint32_t u0, u1;
-    packPointer( &afterPRD, u0, u1 );  
+    if (dot(nn, rayDir) > 0.0)
+        nn = -nn;
 
-    const float3 pos = optixGetWorldRayOrigin() + optixGetRayTmax()*optixGetWorldRayDirection();
-    //(1.f-u-v) * A + u * B + v * C;
-    
-    float3 rayDir = reflect(optixGetWorldRayDirection(), normal);
-    optixTrace(optixLaunchParams.traversable,
-        pos,
-        rayDir,
-        0.00001f,    // tmin
-        1e20f,  // tmax
-        0.0f,   // rayTime
-        OptixVisibilityMask( 255 ),
-        OPTIX_RAY_FLAG_NONE, //OPTIX_RAY_FLAG_NONE,
-        PHONG,             // SBT offset
-        RAY_TYPE_COUNT,     // SBT stride
-        PHONG,             // missSBTIndex 
-        u0, u1 );
 
-    float3 &prd = *(float3*)getPRD<float3>();
-    prd = make_float3(0.8,0.8,0.8) * afterPRD;
+    prd.emitted = make_float3(0.0f);
+    prd.countEmitted = false;
+
+    // set origin and direction for next ray
+    float3 reflectDir = reflect(optixGetWorldRayDirection(), nn);
+
+    prd.direction = reflectDir;
+    prd.origin    = pos;
+
+
+    /* TODO glossiness
+
+    // r = u ^ 1/(glossiness + 1)
+
+    // update attenuation
+    prd.attenuation *= sbtData.diffuse;
+
+
+    uint32_t seed = prd.seed;
+
+    {
+        // set origin and direction for next ray
+        const float z1 = rnd(seed);
+        const float z2 = rnd(seed);
+
+        float3 w_in;
+        cosine_sample_hemisphere( z1, z2, w_in );
+        Onb onb( nn );
+        onb.inverse_transform( w_in );
+
+        prd.direction = w_in;
+        prd.origin    = pos;
+    }
+    */
 }
 
 
@@ -243,7 +264,7 @@ extern "C" __global__ void __closesthit__phong_metal() {
 
 // -----------------------------------------------
 // Glass Phong rays (Refração)
-
+/*
 extern "C" __global__ void __closesthit__phong_glass() {
 
     const TriangleMeshSBTData &sbtData
@@ -389,7 +410,7 @@ extern "C" __global__ void __miss__shadow_glass() {
 }
 
 
-
+*/
 
 
 // -----------------------------------------------
@@ -443,7 +464,7 @@ extern "C" __global__ void __raygen__renderFrame() {
                         0.1f,    // tmin
                         50000.0f,  // tmax
                         0.0f, OptixVisibilityMask( 1 ),
-                        OPTIX_RAY_FLAG_NONE, RAIDANCE, RAY_TYPE_COUNT, RAIDANCE, u0, u1 );
+                        OPTIX_RAY_FLAG_NONE, RADIANCE, RAY_TYPE_COUNT, RADIANCE, u0, u1 );
 
                 result += prd.emitted;
                 result += prd.radiance * prd.attenuation;
@@ -482,10 +503,8 @@ extern "C" __global__ void __raygen__renderFrame() {
         printf("Nau Ray-Tracing Debug\n");
         const float4 &ld = optixLaunchParams.global->lightPos;
         printf("LightPos: %f, %f %f %f\n", ld.x,ld.y,ld.z,ld.w);
-        printf("Attenuation: %d\n", optixLaunchParams.global->attenuation);
         printf("Launch dim: %u %u\n", optixGetLaunchDimensions().x, optixGetLaunchDimensions().y);
         printf("Rays per pixel squared: %d \n", optixLaunchParams.frame.raysPerPixel);
-        printf("Max Depth: %d \n", optixLaunchParams.global->maxDepth);
 		printf("===========================================\n");
 	}
 }

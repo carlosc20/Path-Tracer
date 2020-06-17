@@ -1,5 +1,5 @@
-#include "../launchParamsGlobal.h"
-#include  "../util.h"
+#include "../include/launchParamsGlobal.h"
+#include  "../include/util.h"
 
 struct GlobalParams{
     float4 lightPos;
