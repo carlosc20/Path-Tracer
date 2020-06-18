@@ -1,5 +1,5 @@
 <?xml version="1.0" ?>
-<project name="Optix Test - Iterative Path Tracing with tone mapping" width=1024 height=1024>
+<project name="Iterative Path Tracer - Sponza" width=1024 height=1024>
 	<assets>
         <attributes>
             <attribute type="PASS" name="SHADOW_RAYS" data="INT" value="1" />
@@ -9,6 +9,8 @@
 			<attribute type="PASS" name="EXPOSURE" data="FLOAT" value = "10" />
 			<attribute type="PASS" name="Levels" data="INT" value=10 />
 			<attribute type="PASS" name="CurrentLevel" data="INT" value=0 />
+
+			<attribute type="PASS" name="RRTERMINATION" data="BOOL" value="TRUE" />
        </attributes>
 		<scenes>
 			<scene name="MainScene" >
@@ -24,10 +26,8 @@
 			<camera name="MainCamera" >
 				<viewport name="MainViewport" />
 				<projection TYPE="PERSPECTIVE" FOV=60.0 NEAR=1.0 FAR=10000.0 />
-				<POSITION x="0.0" y="0.75" z="2.5" />
-				<VIEW x="0.0" y="0.0" z="-1.0"  />
-				<!--POSITION x="9.822" y="1.269" z="12.338" />
-				<VIEW x="0.871" y="-0.286" z="-0.40"  /-->
+				<POSITION x="-83.057" y="165.442" z="-45.508" />
+				<VIEW x="1.0" y="0.0" z="0.0"  />
 				<UP x="0.0" y="1.0" z="0.0" />
 			</camera>
 		</cameras>
@@ -85,6 +85,7 @@
                     <param name="shadowRays" type="PASS" context="CURRENT" component= "SHADOW_RAYS" />
                     <param name="gamma" type="PASS" context="CURRENT" component= "GAMMA" />
                     <param name="lightScale" type="PASS" context="CURRENT" component= "LIGHT_SCALE" />
+					<param name="rrTermination" type="PASS" context="CURRENT" component="RRTERMINATION" />
                </rtGlobalParams>
 			</pass>
 			<pass class="quad" name="computeLuminance">
@@ -113,6 +114,7 @@
             <var label="Gamma" type="PASS" context="PathTracer#pass1" component="GAMMA"
                 def="min=0.1 max=3" />
             <var label="Light Scale" type="PASS" context="PathTracer#pass1" component="LIGHT_SCALE" />
+			<var label="rrTermination" type="PASS" context="PathTracer#pass1" component="RRTERMINATION" />
          </window>
     </interface>
 </project>

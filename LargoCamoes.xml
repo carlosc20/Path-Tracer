@@ -4,11 +4,14 @@
         <attributes>
             <attribute type="PASS" name="SHADOW_RAYS" data="INT" value="1" />
             <attribute type="PASS" name="GAMMA" data="FLOAT" value = "2.2" />
-            <attribute type="PASS" name="LIGHT_SCALE" data="FLOAT" value = "100000.0" />
+            <attribute type="PASS" name="LIGHT_SCALE" data="FLOAT" value = "10000.0" />
  
 			<attribute type="PASS" name="EXPOSURE" data="FLOAT" value = "10" />
 			<attribute type="PASS" name="Levels" data="INT" value=10 />
 			<attribute type="PASS" name="CurrentLevel" data="INT" value=0 />
+
+			
+			<attribute type="PASS" name="RRTERMINATION" data="BOOL" value="TRUE" />
        </attributes>
 		<scenes>
 			<scene name="MainScene" >
@@ -86,6 +89,7 @@
                     <param name="shadowRays" type="PASS" context="CURRENT" component= "SHADOW_RAYS" />
                     <param name="gamma" type="PASS" context="CURRENT" component= "GAMMA" />
                     <param name="lightScale" type="PASS" context="CURRENT" component= "LIGHT_SCALE" />
+					<param name="rrTermination" type="PASS" context="CURRENT" component="RRTERMINATION" />
                </rtGlobalParams>
 			</pass>
 			<pass class="quad" name="computeLuminance">
@@ -114,6 +118,7 @@
             <var label="Gamma" type="PASS" context="PathTracer#pass1" component="GAMMA"
                 def="min=0.1 max=3" />
             <var label="Light Scale" type="PASS" context="PathTracer#pass1" component="LIGHT_SCALE" />
+			<var label="rrTermination" type="PASS" context="PathTracer#pass1" component="RRTERMINATION" />
          </window>
     </interface>
 </project>

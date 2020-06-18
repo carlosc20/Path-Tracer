@@ -110,9 +110,19 @@ extern "C" __global__ void __closesthit__radiance() {
 
     prd.radiance += Lintensity * weight * optixLaunchParams.global->lightScale;
 
-    // TODO textures
+    if (sbtData.hasTexture && sbtData.vertexD.texCoord0) {  
+        // compute pixel texture coordinate
+        const float4 tc
+          = (1.f-u-v) * sbtData.vertexD.texCoord0[index.x]
+          +         u * sbtData.vertexD.texCoord0[index.y]
+          +         v * sbtData.vertexD.texCoord0[index.z];
+        // fetch texture value
+        float4 fromTexture = tex2D<float4>(sbtData.texture,tc.x,tc.y);
+        prd.attenuation *= make_float3(fromTexture);
+    }
+    else
+        prd.attenuation *= sbtData.diffuse;
 
-    prd.attenuation *= sbtData.diffuse;
 }
 
 
