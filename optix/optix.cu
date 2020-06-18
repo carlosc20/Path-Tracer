@@ -35,7 +35,7 @@ extern "C" __global__ void __closesthit__radiance() {
         nn = -nn;
 
 
-    // if its the first ray and hit a light, set the emission
+    // if it hit a light and didn't hit a diffuse surface before, add light emission
     if (prd.countEmitted && length(sbtData.emission) != 0) {
         prd.emitted = sbtData.emission ;
         return;
@@ -44,8 +44,7 @@ extern "C" __global__ void __closesthit__radiance() {
     prd.emitted = make_float3(0.0f);
     prd.countEmitted = false;
     
-    // update attenuation
-    prd.attenuation *= sbtData.diffuse;
+
 
 
     uint32_t seed = prd.seed;
@@ -103,25 +102,17 @@ extern "C" __global__ void __closesthit__radiance() {
         {
             const float att = Ldist * Ldist;
             const float A = length(cross(lightV1, lightV2));
-            weight = nDl * LnDl * A  / att;
+            weight = nDl * LnDl * A  / att; // monte carlo ?
         }
     }
 
-    prd.radiance += make_float3(5.0f, 5.0f, 5.0f) * weight * optixLaunchParams.global->lightScale;
+    float3 Lintensity = make_float3(5.0f, 5.0f, 5.0f);
 
-    /*
-    https://computergraphics.stackexchange.com/questions/2316/is-russian-roulette-really-the-answer
-    
-    // Russian Roulette
-        // Randomly terminate a path with a probability inversely equal to the throughput
-        float p = std::max(throughput.x, std::max(throughput.y, throughput.z));
-        if (sampler->NextFloat() > p) {
-            break;
-        }
+    prd.radiance += Lintensity * weight * optixLaunchParams.global->lightScale;
 
-        // Add the energy we 'lose' by randomly terminating paths
-        throughput *= 1 / p;
-    */
+    // TODO textures
+
+    prd.attenuation *= sbtData.diffuse;
 }
 
 
@@ -204,6 +195,18 @@ extern "C" __global__ void __raygen__renderFrame() {
                 result += prd.emitted;
                 result += prd.radiance * prd.attenuation;
 
+                
+                // Russian Roulette Path Termination
+                if (optixLaunchParams.global->rrTermination) {
+                    // Randomly terminate a path with a probability inversely equal to the throughput
+                    float q = max(prd.attenuation.x, max(prd.attenuation.y, prd.attenuation.z));
+                    if (rnd(prd.seed) > q) {
+                        break;
+                    }
+                    // Compensate for randomly terminating path
+                    prd.attenuation *= 1.f / q;
+                }  
+                
                 origin = prd.origin;
                 rayDir = prd.direction;
             }

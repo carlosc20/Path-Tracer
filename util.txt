@@ -1,21 +1,39 @@
 
-refraction and reflection, fresnel
-https://computergraphics.stackexchange.com/questions/2482/choosing-reflection-or-refraction-in-path-tracing
-
-importance sampling
-https://computergraphics.stackexchange.com/questions/4979/what-is-importance-sampling/4994#4994
 
 
-russian roulette
-https://computergraphics.stackexchange.com/questions/2316/is-russian-roulette-really-the-answer
-
-Optix Path tracer com RR
-https://github.com/joaovbs96/OptiX-Path-Tracer/tree/master/OptiX-Path-Tracer/programs
-
-Optix Path tracer
+Optix Path Tracer Examples:
 https://github.com/knightcrawler25/Optix-PathTracer/tree/master/src/optixPathTracer
+https://github.com/joaovbs96/OptiX-Path-Tracer/tree/master/OptiX-Path-Tracer/programs
 
 
 Progressive Path Tracing with Explicit Light Sampling
 https://computergraphics.stackexchange.com/questions/5152/progressive-path-tracing-with-explicit-light-sampling/5153#5153
+
+What is Importance Sampling?
+https://computergraphics.stackexchange.com/questions/4979/what-is-importance-sampling/4994#4994
+
+
+
+
+
+Choosing Reflection or Refraction in Path Tracing
+https://computergraphics.stackexchange.com/questions/2482/choosing-reflection-or-refraction-in-path-tracing
+
+
+
+
+# Russian roulette path termination
+
+Monte Carlo Integration - Russian Roulette and Splitting
+http://www.pbr-book.org/3ed-2018/Monte_Carlo_Integration/Russian_Roulette_and_Splitting.html#sec:russian-roulette
+
+Is Russian Roulette really the answer?
+https://computergraphics.stackexchange.com/questions/2316/is-russian-roulette-really-the-answer
+
+
+
+
+
+
+
 

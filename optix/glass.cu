@@ -46,9 +46,6 @@ extern "C" __global__ void __closesthit__glass() {
         nextRayDir = refract(rayDir, -nn, 1.5);
     }
 
-    // didn't hit light
-    prd.emitted = make_float3(0.0f);
-    prd.countEmitted = false;
 
     if (length(nextRayDir) > 0) // why?
         prd.direction = nextRayDir;
@@ -70,7 +67,7 @@ extern "C" __global__ void __closesthit__glass() {
 
         // next ray has probability of being used for refraction or reflexion based on r0
         // aprox: refract * (1-r0) + reflect * r0;
-        if(z < r0) {
+        if(z <= r0) {
             float3 reflectDir = reflect(rayDir, nn);        
             prd.direction = reflectDir;
         }
@@ -84,37 +81,7 @@ extern "C" __global__ void __closesthit__glass() {
 
 // -----------------------------------------------
 // Glass Shadow rays
+
 extern "C" __global__ void __closesthit__shadow_glass() {
     optixSetPayload_0( static_cast<uint32_t>(true));
 }
-
-/*
-extern "C" __global__ void __closesthit__shadow_glass() {
-
-    // ray payload
-    float afterPRD = 1.0f;
-    uint32_t u0, u1;
-    packPointer( &afterPRD, u0, u1 );  
-
-    // intersection position
-    const float3 &rayDir =  optixGetWorldRayDirection();
-    const float3 pos = optixGetWorldRayOrigin() + optixGetRayTmax() * rayDir;
-
-    
-    uint32_t occluded = 0u;
-    optixTrace(optixLaunchParams.traversable,
-        pos,
-        rayDir,
-        0.1f,                    // tmin
-        1e20f,           // tmax
-        0.0f,                    // rayTime
-        OptixVisibilityMask( 255 ),
-        OPTIX_RAY_FLAG_NONE,
-        SHADOW,                 // SBT offset
-        RAY_TYPE_COUNT,         // SBT stride
-        SHADOW,                 // missSBTIndex
-        occluded);
-
-    // attenuation?
-}
-*/

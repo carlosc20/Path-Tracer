@@ -32,10 +32,6 @@ extern "C" __global__ void __closesthit__glossy() {
     if (dot(nn, rayDir) > 0.0)
         nn = -nn;
 
-    // didn't hit light
-    prd.emitted = make_float3(0.0f);
-    prd.countEmitted = false;
-
 
     const float glossiness = optixLaunchParams.global->glossiness;
 
