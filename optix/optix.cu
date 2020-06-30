@@ -253,6 +253,7 @@ extern "C" __global__ void __raygen__renderFrame() {
         printf("LightPos: %f, %f %f %f\n", ld.x,ld.y,ld.z,ld.w);
         printf("Launch dim: %u %u\n", optixGetLaunchDimensions().x, optixGetLaunchDimensions().y);
         printf("Rays per pixel squared: %d \n", optixLaunchParams.frame.raysPerPixel);
+        printf("RefractionIndex: %f \n",         optixLaunchParams.global->refractionIndex);
 		printf("===========================================\n");
 	}
 }

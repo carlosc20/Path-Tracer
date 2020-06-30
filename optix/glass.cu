@@ -32,18 +32,22 @@ extern "C" __global__ void __closesthit__glass() {
     // if (dot(nn, rayDir) > 0.0)
     //    nn = -nn;
 
+    // refractive indices
+    const float RI_AIR = 1.0f;
+    const float refractionIndex = optixLaunchParams.global->refractionIndex; // glass -> 1.5
+    
     float3 nextRayDir;
 
     // entering glass
     float dotP;
     if (dot(rayDir, nn) < 0) {
         dotP = dot(rayDir, -nn);
-        nextRayDir = refract(rayDir, nn, 0.66);
+        nextRayDir = refract(rayDir, nn, RI_AIR/refractionIndex);
     }
     // exiting glass
     else {
         dotP = 0;
-        nextRayDir = refract(rayDir, -nn, 1.5);
+        nextRayDir = refract(rayDir, -nn, refractionIndex/RI_AIR);
     }
 
 
@@ -55,27 +59,26 @@ extern "C" __global__ void __closesthit__glass() {
         const float z = rnd(seed);
         prd.seed = seed;
 
-        // refractive indices
-        const float RI_AIR = 1.0f;
-        const float RI_GLASS = 1.5f;
+
+        
+        
 
         // Reflection coefficient
-        float r0 = (RI_GLASS - RI_AIR)/(RI_GLASS + RI_AIR);
+        float r0 = (refractionIndex - RI_AIR)/(refractionIndex + RI_AIR);
         r0 = r0 * r0;
         // Schlick's approximation
         r0 = r0 + (1 - r0) * pow(1-dotP,5);
 
         // next ray has probability of being used for refraction or reflexion based on r0
-        // aprox: refract * (1-r0) + reflect * r0;
-        if(z <= r0) {
-            float3 reflectDir = reflect(rayDir, nn);        
-            prd.direction = reflectDir;
+        // splitting: refract * (1-r0) + reflect * r0;
+        if(z <= r0) {    
+            prd.direction = reflect(rayDir, nn); 
         }
     }
 
     prd.origin = pos;
 
-    // attenuation?
+    prd.attenuation *= sbtData.diffuse;
 }
 
 

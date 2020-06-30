@@ -1,9 +1,0 @@
-possiveis problemas path tracing
-
-hidden light
-
-glass:
-caustics
-
-glossy:
-When light is small and the surface is not smooth it is hard to sample it

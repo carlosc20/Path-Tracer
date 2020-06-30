@@ -10,6 +10,7 @@ struct GlobalParams{
     float gamma;
     float lightScale;
     float glossiness;
+    float refractionIndex;
     bool rrTermination;
 };
 
