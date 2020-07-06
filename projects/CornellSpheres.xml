@@ -12,6 +12,8 @@
 
 			<attribute type="PASS" name="GLOSSINESS" data="FLOAT" value="128" />
 
+			<attribute type="PASS" name="REFRACTIONINDEX" data="FLOAT" value="1.5" />
+
 			<attribute type="PASS" name="RRTERMINATION" data="BOOL" value="TRUE" />
        </attributes>
 		<scenes>
@@ -71,50 +73,51 @@
 				</rtEntryPoint>
 				<rtDefaultMaterial>
 					<rayType name="Radiance">
-						<rtProgram type="ANY_HIT" file="../out/optix.ptx" proc="__anyhit__radiance"/> 
-						<rtProgram type="CLOSEST_HIT" file="../out/optix.ptx" proc="__closesthit__radiance"/> 
-						<rtProgram type="MISS" 		 file="../out/optix.ptx" proc="__miss__radiance"/> 
+						<rtProgram type="ANY_HIT" 		file="../out/optix.ptx" proc="__anyhit__radiance"/> 
+						<rtProgram type="CLOSEST_HIT" 	file="../out/optix.ptx" proc="__closesthit__radiance"/> 
+						<rtProgram type="MISS" 			file="../out/optix.ptx" proc="__miss__radiance"/> 
 					</rayType>
 					<rayType name="Shadow">
-						<rtProgram type="ANY_HIT" file="../out/optix.ptx" proc="__anyhit__shadow"/> 
-						<rtProgram type="CLOSEST_HIT" file="../out/optix.ptx" proc="__closesthit__shadow"/> 
-						<rtProgram type="MISS" 		 file="../out/optix.ptx" proc="__miss__shadow"/> 
+						<rtProgram type="ANY_HIT" 		file="../out/optix.ptx" proc="__anyhit__shadow"/> 
+						<rtProgram type="CLOSEST_HIT" 	file="../out/optix.ptx" proc="__closesthit__shadow"/> 
+						<rtProgram type="MISS" 		 	file="../out/optix.ptx" proc="__miss__shadow"/> 
 					</rayType>
 				</rtDefaultMaterial>
 				<rtMaterialMap>
                     <rtMap to = "rightSphere">
                         <rayType name="Radiance">
-                            <rtProgram type="ANY_HIT" file="../out/optix.ptx" proc="__anyhit__radiance"/> 
-                            <rtProgram type="CLOSEST_HIT" file="../out/optix.ptx" proc="__closesthit__glass"/> 
-                            <rtProgram type="MISS" 		 file="../out/optix.ptx" proc="__miss__radiance"/> 
+                            <rtProgram type="ANY_HIT" 		file="../out/optix.ptx" proc="__anyhit__radiance"/> 
+                            <rtProgram type="CLOSEST_HIT" 	file="../out/optix.ptx" proc="__closesthit__glass"/> 
+                            <rtProgram type="MISS" 		 	file="../out/optix.ptx" proc="__miss__radiance"/> 
                         </rayType>
                         <rayType name="Shadow">
-                            <rtProgram type="ANY_HIT" file="../out/optix.ptx" proc="__anyhit__shadow"/> 
-                            <rtProgram type="CLOSEST_HIT" file="../out/optix.ptx" proc="__closesthit__shadow_glass"/> 
-                            <rtProgram type="MISS" 		 file="../out/optix.ptx" proc="__miss__shadow"/> 
+                            <rtProgram type="ANY_HIT" 		file="../out/optix.ptx" proc="__anyhit__shadow"/> 
+                            <rtProgram type="CLOSEST_HIT" 	file="../out/optix.ptx" proc="__closesthit__shadow"/> 
+                            <rtProgram type="MISS" 		 	file="../out/optix.ptx" proc="__miss__shadow"/> 
                         </rayType>
                     </rtMap>
                     <rtMap to = "leftSphere">
                         <rayType name="Radiance">
-                            <rtProgram type="ANY_HIT" file="../out/optix.ptx" proc="__anyhit__radiance"/> 
-                            <rtProgram type="CLOSEST_HIT" file="../out/optix.ptx" proc="__closesthit__glossy"/> 
-                            <rtProgram type="MISS" 		 file="../out/optix.ptx" proc="__miss__radiance"/> 
+                            <rtProgram type="ANY_HIT" 		file="../out/optix.ptx" proc="__anyhit__radiance"/> 
+                            <rtProgram type="CLOSEST_HIT" 	file="../out/optix.ptx" proc="__closesthit__glossy"/> 
+                            <rtProgram type="MISS" 		 	file="../out/optix.ptx" proc="__miss__radiance"/> 
                         </rayType>
                         <rayType name="Shadow">
-                            <rtProgram type="ANY_HIT" file="../out/optix.ptx" proc="__anyhit__shadow"/> 
-                            <rtProgram type="CLOSEST_HIT" file="../out/optix.ptx" proc="__closesthit__shadow"/> 
-                            <rtProgram type="MISS" 		 file="../out/optix.ptx" proc="__miss__shadow"/> 
+                            <rtProgram type="ANY_HIT" 		file="../out/optix.ptx" proc="__anyhit__shadow"/> 
+                            <rtProgram type="CLOSEST_HIT" 	file="../out/optix.ptx" proc="__closesthit__shadow"/> 
+                            <rtProgram type="MISS" 		 	file="../out/optix.ptx" proc="__miss__shadow"/> 
                         </rayType>
                     </rtMap>
                 </rtMaterialMap>
                <rtGlobalParams>
-                    <param name="lightPos" type="LIGHT" context="CURRENT" id=0 component="POSITION" />
-                    <param name="accumBuffer" type="BUFFER" context="Optix Ray Tracer Render Target::accumBuffer"  component="ID"/>               
-                    <param name="shadowRays" type="PASS" context="CURRENT" component= "SHADOW_RAYS" />
-                    <param name="gamma" type="PASS" context="CURRENT" component= "GAMMA" />
-                    <param name="lightScale" type="PASS" context="CURRENT" component= "LIGHT_SCALE" />
-					<param name="glossiness" type="PASS" context="CURRENT" component="GLOSSINESS" />
-					<param name="rrTermination" type="PASS" context="CURRENT" component="RRTERMINATION" />
+                    <param name="lightPos" 			type="LIGHT" 	context="CURRENT" component="POSITION" id=0 />
+                    <param name="accumBuffer" 		type="BUFFER" 	context="Optix Ray Tracer Render Target::accumBuffer"  component="ID"/>               
+                    <param name="shadowRays" 		type="PASS" 	context="CURRENT" component= "SHADOW_RAYS" />
+                    <param name="gamma" 			type="PASS" 	context="CURRENT" component= "GAMMA" />
+                    <param name="lightScale"		type="PASS" 	context="CURRENT" component= "LIGHT_SCALE" />
+					<param name="glossiness" 		type="PASS" 	context="CURRENT" component="GLOSSINESS" />
+					<param name="refractionIndex" 	type="PASS" 	context="CURRENT" component="REFRACTIONINDEX" />
+					<param name="rrTermination" 	type="PASS" 	context="CURRENT" component="RRTERMINATION" />
                </rtGlobalParams>
 			</pass>
 			<pass class="quad" name="computeLuminance">
@@ -145,6 +148,8 @@
             <var label="Light Scale" type="PASS" context="PathTracer#pass1" component="LIGHT_SCALE" />
 			<var label="Glossiness" type="PASS" context="PathTracer#pass1" component="GLOSSINESS"
                 def="min=0.1 max=1000" />
+			<var label="Refraction Index" type="PASS" context="PathTracer#pass1" component="REFRACTIONINDEX"
+                def="min=0 max=3" />
 			<var label="rrTermination" type="PASS" context="PathTracer#pass1" component="RRTERMINATION" />
          </window>
     </interface>

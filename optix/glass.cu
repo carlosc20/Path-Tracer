@@ -29,9 +29,6 @@ extern "C" __global__ void __closesthit__glass() {
     const float3 &rayDir =  optixGetWorldRayDirection();
     const float3 pos = optixGetWorldRayOrigin() + optixGetRayTmax() * rayDir;
 
-    // if (dot(nn, rayDir) > 0.0)
-    //    nn = -nn;
-
     // refractive indices
     const float RI_AIR = 1.0f;
     const float refractionIndex = optixLaunchParams.global->refractionIndex; // glass -> 1.5
@@ -49,29 +46,28 @@ extern "C" __global__ void __closesthit__glass() {
         dotP = 0;
         nextRayDir = refract(rayDir, -nn, refractionIndex/RI_AIR);
     }
-
-
-    if (length(nextRayDir) > 0) // why?
+    
+    // ?
+    if (length(nextRayDir) > 0)
         prd.direction = nextRayDir;
 
+
+    // entering glass reflection/refraction
     if (dotP > 0) {
-        uint32_t seed = prd.seed;
-        const float z = rnd(seed);
-        prd.seed = seed;
-
-
-        
-        
-
         // Reflection coefficient
         float r0 = (refractionIndex - RI_AIR)/(refractionIndex + RI_AIR);
-        r0 = r0 * r0;
+
         // Schlick's approximation
+        r0 = r0 * r0;
         r0 = r0 + (1 - r0) * pow(1-dotP,5);
 
         // next ray has probability of being used for refraction or reflexion based on r0
         // splitting: refract * (1-r0) + reflect * r0;
-        if(z <= r0) {    
+        uint32_t seed = prd.seed;
+        const float z = rnd(seed);
+        prd.seed = seed;
+
+        if(z <= r0) {
             prd.direction = reflect(rayDir, nn); 
         }
     }
@@ -79,12 +75,5 @@ extern "C" __global__ void __closesthit__glass() {
     prd.origin = pos;
 
     prd.attenuation *= sbtData.diffuse;
-}
-
-
-// -----------------------------------------------
-// Glass Shadow rays
-
-extern "C" __global__ void __closesthit__shadow_glass() {
-    optixSetPayload_0( static_cast<uint32_t>(true));
+    prd.specularBounce = true;
 }

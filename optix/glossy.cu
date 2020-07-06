@@ -27,12 +27,10 @@ extern "C" __global__ void __closesthit__glossy() {
 
     // intersection position
     const float3 &rayDir =  optixGetWorldRayDirection();
-    const float3 pos = optixGetWorldRayOrigin() + optixGetRayTmax() * rayDir ;
+    const float3 pos = optixGetWorldRayOrigin() + optixGetRayTmax() * rayDir;
 
-    // ray is below tangent plane?
     if (dot(nn, rayDir) > 0.0)
         nn = -nn;
-
 
     const float glossiness = optixLaunchParams.global->glossiness;
 
@@ -54,4 +52,5 @@ extern "C" __global__ void __closesthit__glossy() {
     prd.origin    = pos;
 
     prd.attenuation *= sbtData.diffuse;
+    prd.specularBounce = true;
 }

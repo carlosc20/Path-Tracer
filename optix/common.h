@@ -15,6 +15,7 @@ struct RadiancePRD{
     float3   attenuation;
     float3   origin;
     float3   direction;
+    bool specularBounce;
     bool done;
     uint32_t seed;
     int32_t  countEmitted;
