@@ -72,6 +72,7 @@ extern "C" __global__ void __closesthit__glass() {
         }
     }
 
+    // set prd
     prd.origin = pos;
 
     prd.attenuation *= sbtData.diffuse;

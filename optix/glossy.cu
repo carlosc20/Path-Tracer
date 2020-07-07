@@ -29,6 +29,7 @@ extern "C" __global__ void __closesthit__glossy() {
     const float3 &rayDir =  optixGetWorldRayDirection();
     const float3 pos = optixGetWorldRayOrigin() + optixGetRayTmax() * rayDir;
 
+    // invert normal if hit from behind
     if (dot(nn, rayDir) > 0.0)
         nn = -nn;
 
@@ -38,19 +39,19 @@ extern "C" __global__ void __closesthit__glossy() {
     float3 reflectDir = reflect(optixGetWorldRayDirection(), nn);
     uint32_t seed = prd.seed;
 
+
     do {
         const float z1 = rnd(seed);
         const float z2 = rnd(seed);
-        cosine_power_sample_hemisphere( z1, z2, nextRayDir, glossiness );
-        Onb onb( reflectDir );
-        onb.inverse_transform( nextRayDir );
+        cosine_power_sample_hemisphere(z1, z2, nextRayDir, glossiness);
+        Onb onb(reflectDir);
+        onb.inverse_transform(nextRayDir);
     } while (dot(nextRayDir, nn) < 0.001);
     prd.seed = seed;
 
-    // set origin and direction for next ray
+    // set prd
     prd.direction = nextRayDir;
     prd.origin    = pos;
-
     prd.attenuation *= sbtData.diffuse;
     prd.specularBounce = true;
 }
