@@ -1,7 +1,7 @@
 @echo off
 title Run project
-set nau="C:\Users\CarlosPeixotoAntunes\UM\4ano\VI2\nau\build\bin\composerImGui.exe"
-set projects_dir="C:\Users\CarlosPeixotoAntunes\Projects\VI2\projects"
+set nau="C:\Users\CarlosPeixotoAntunes\Projects\nau\build\bin\composerImGui.exe"
+set projects_dir="C:\Users\CarlosPeixotoAntunes\Projects\Path-Tracer\projects"
 
 setlocal EnableDelayedExpansion
 

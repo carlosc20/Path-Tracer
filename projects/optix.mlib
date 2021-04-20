@@ -27,11 +27,11 @@
         </buffer> 
     </buffers>
 	<shaders>
-		<shader name="computeLuminance"	ps="shaders/computeLuminance.frag" 
-										vs="shaders/combine.vert" />
-		<shader name="tonemap"			ps="shaders/tonemap.frag" 
-										vs="shaders/combine.vert" />
-		<shader name="mipmap"	        cs="shaders/mipmap.comp" /> 
+		<shader name="computeLuminance"	ps="../shaders/computeLuminance.frag" 
+										vs="../shaders/combine.vert" />
+		<shader name="tonemap"			ps="../shaders/tonemap.frag" 
+										vs="../shaders/combine.vert" />
+		<shader name="mipmap"	        cs="../shaders/mipmap.comp" /> 
 	</shaders>
 
     <materials>
